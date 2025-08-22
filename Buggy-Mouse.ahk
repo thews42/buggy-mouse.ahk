@@ -18,42 +18,51 @@ Menu, Tray, Add, %Text_ClicksBlocked%, ShowClicksBlocked
 Menu, Tray, Default, %Text_ClicksBlocked%
 Menu, Tray, NoStandard
 
-; Detect primary mouse button setting
+; Detect primary mouse button setting (used for info only)
 PrimaryButton := GetPrimaryMouseButton()
 
-; Handle primary mouse button down
-*%PrimaryButton%:: *MButton:: *RButton::
+; Explicit hotkeys for mouse buttons (call handlers)
+*LButton::
+*MButton::
+*RButton::
     ProcessMouseDown(A_ThisHotkey)
-Return
+return
 
-; Handle primary mouse button up
-*%PrimaryButton% up:: *MButton up:: *RButton up::
+*LButton up::
+*MButton up::
+*RButton up::
     ProcessMouseUp(A_ThisHotkey)
-Return
+return
 
 ; Update Tray Menu with click block count
-UpdateTray:
+UpdateTray() {
+    global Text_ClicksBlocked, BlockedCount_Down, BlockedCount_Up
     BlockedCount_Total := BlockedCount_Down + BlockedCount_Up
     MenuText := Text_ClicksBlocked ": " BlockedCount_Total
     Menu, Tray, Tip, %MenuText% - %A_ScriptName%
-Return
+}
 
 ; Show clicks blocked info
 ShowClicksBlocked:
-    MsgBox, 64,, %Text_ClicksBlocked% - Down: %BlockedCount_Down% Up: %BlockedCount_Up%
-Return
+    global BlockedCount_Down, BlockedCount_Up, PrimaryButton, Text_ClicksBlocked
+    MsgBox, 64,, %Text_ClicksBlocked% - Down: %BlockedCount_Down% Up: %BlockedCount_Up%`nPrimary: %PrimaryButton%
+return
 
 ; Mouse down handler
 ProcessMouseDown(hotkey) {
+    global DoubleClickMin_ms, LastMouseDown_ts, LastMouseDown
+    global BlockedCount_Down, blockeddown
     Critical
-    VarSafeHotkey := MakeVarSafe(hotkey)
+    keyName := Hotkey_GetKeyName(hotkey)
     TimeSinceLastDown := A_TickCount - LastMouseDown_ts
 
-    If (hotkey = LastMouseDown && TimeSinceLastDown <= DoubleClickMin_ms) {
+    if (hotkey = LastMouseDown && TimeSinceLastDown <= DoubleClickMin_ms) {
+        blockeddown := 1
         BlockedCount_Down++
-        Gosub, UpdateTray
-    } Else {
-        Send, {Blind}{%Hotkey_GetKeyName(hotkey)% DownTemp}
+        UpdateTray()
+    } else {
+        blockeddown := 0
+        Send, {Blind}{%keyName% DownTemp}
     }
     LastMouseDown := hotkey
     LastMouseDown_ts := A_TickCount
@@ -61,14 +70,16 @@ ProcessMouseDown(hotkey) {
 
 ; Mouse up handler
 ProcessMouseUp(hotkey) {
+    global LastMouseUp_ts
+    global BlockedCount_Up, blockeddown
     Critical
-    VarSafeHotkey := MakeVarSafe(hotkey)
+    keyName := Hotkey_GetKeyName(hotkey)
 
-    If (blockeddown) {
+    if (blockeddown) {
         BlockedCount_Up++
-        Gosub, UpdateTray
-    } Else {
-        Send, {Blind}{%Hotkey_GetKeyName(hotkey)% up}
+        UpdateTray()
+    } else {
+        Send, {Blind}{%keyName% up}
     }
     blockeddown := 0
     LastMouseUp_ts := A_TickCount

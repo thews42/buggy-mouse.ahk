@@ -5,6 +5,15 @@ Original file was hosted on http://jslover.secsrv.net/AutoHotkey/Scripts/Buggy-M
 
 ### Changelog
 
+#### Version 1.2.0
+
+- **Improvement: Reliable Button Handling**
+  - Replaced dynamic primary-button hotkeys with explicit `LButton`/`MButton`/`RButton` hotkeys that delegate to shared handlers.
+- **Fix: Debounce Logic and Globals**
+  - Corrected blocked-click logic for down/up events and declared necessary globals inside handler functions to avoid scope issues.
+- **Improvement: Tray Updates**
+  - Converted tray update label into a function for cleaner calls and updated tooltip text to include total blocked clicks.
+
 #### Version 1.1.0
 
 - **Feature: Dynamic Primary Button Detection**
